@@ -1,12 +1,44 @@
 <script setup lang="ts">
 import { getHomeGoodsGuessLikeAPI } from '@/services/home'
-import { onMounted } from 'vue'
+import type { PageParams } from '@/types/global'
+import type { GuessItem } from '@/types/home'
+import { onMounted, ref } from 'vue'
+const pageParams: Required<PageParams> = {
+  page: 1,
+  pageSize: 10,
+}
+// 重置数据
+const resetData = () => {
+  pageParams.page = 1
+  guessList.value = []
+  finish.value = false
+}
+// 已结束标记
+const finish = ref(false)
+//存储数据
+const guessList = ref<GuessItem[]>([])
 // 获取猜你喜欢数据
 const getHomeGoodsGuessLikeData = async () => {
-  const res = await getHomeGoodsGuessLikeAPI()
+  if (finish.value === true) {
+    return uni.showToast({ icon: 'none', title: '没有更多数据~' })
+  }
+  const res = await getHomeGoodsGuessLikeAPI(pageParams)
+  //数组追加
+  guessList.value.push(...res.result.items)
+  //分页条件
+  if (pageParams.page < res.result.pages) {
+    // 页码累加
+    pageParams.page++
+  } else {
+    finish.value = true
+  }
 }
 onMounted(() => {
   getHomeGoodsGuessLikeData()
+})
+defineExpose({
+  getMore: getHomeGoodsGuessLikeData,
+  resetData,
 })
 </script>
 
@@ -18,29 +50,26 @@ onMounted(() => {
   <view class="guess">
     <navigator
       class="guess-item"
-      v-for="item in 10"
-      :key="item"
-      :url="`/pages/goods/goods?id=4007498`"
+      v-for="item in guessList"
+      :key="item.id"
+      :url="`/pages/goods/goods?id=${item.id}`"
     >
-      <image
-        class="image"
-        mode="aspectFill"
-        src="https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/uploads/goods_big_1.jpg"
-      ></image>
-      <view class="name"> 德国THORE男表 超薄手表男士休闲简约夜光石英防水直径40毫米 </view>
+      <image class="image" mode="aspectFill" :src="item.picture"></image>
+      <view class="name">{{ item.name }}</view>
       <view class="price">
         <text class="small">¥</text>
-        <text>899.00</text>
+        <text>{{ item.price }}</text>
       </view>
     </navigator>
   </view>
-  <view class="loading-text"> 正在加载... </view>
+  <view class="loading-text">{{ finish ? '没有更多了~' : '正在加载...' }} </view>
 </template>
 
 <style lang="scss">
 :host {
   display: block;
 }
+
 /* 分类标题 */
 .caption {
   display: flex;
@@ -49,6 +78,7 @@ onMounted(() => {
   padding: 36rpx 0 40rpx;
   font-size: 32rpx;
   color: #262626;
+
   .text {
     display: flex;
     justify-content: center;
@@ -73,6 +103,7 @@ onMounted(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   padding: 0 20rpx;
+
   .guess-item {
     width: 345rpx;
     padding: 24rpx 20rpx 20rpx;
@@ -81,10 +112,12 @@ onMounted(() => {
     overflow: hidden;
     background-color: #fff;
   }
+
   .image {
     width: 304rpx;
     height: 304rpx;
   }
+
   .name {
     height: 75rpx;
     margin: 10rpx 0;
@@ -96,16 +129,19 @@ onMounted(() => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
   }
+
   .price {
     line-height: 1;
     padding-top: 4rpx;
     color: #cf4444;
     font-size: 26rpx;
   }
+
   .small {
     font-size: 80%;
   }
 }
+
 // 加载提示文字
 .loading-text {
   text-align: center;
