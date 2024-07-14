@@ -23,7 +23,6 @@ const activeIndex = ref(0)
 const bannerPicture = ref('')
 // 推荐选项
 const subTypes = ref<(SubTypeItem & { finish?: boolean })[]>([])
-// 获取热门数据
 const getHotRecommendData = async () => {
   const res = await getHotRecommendAPI(currHot!.url, {
     // 技巧：环境变量，开发环境，修改初始页面方便测试分页结束
