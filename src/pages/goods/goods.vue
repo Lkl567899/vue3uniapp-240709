@@ -3,6 +3,8 @@ import { GetGoodsAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
+import AddressPanel from './components/AddressPanel.vue'
+import ServicePanel from './components/ServicePanel.vue'
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 指示点准备
@@ -34,6 +36,19 @@ const onTapImage = (item: string) => {
     current: item,
   })
 }
+// 打开弹出层
+const open = (key: typeof popupKey.value) => {
+  // 根据密匙打开对应组件
+  popupKey.value = key
+  popup.value?.open()
+}
+// 定义密匙
+const popupKey = ref<'service' | 'address'>()
+// 弹层实例
+const popup = ref<{
+  open: (type?: UniHelper.UniPopupType) => void
+  close: () => void
+}>()
 </script>
 
 <template>
@@ -58,25 +73,25 @@ const onTapImage = (item: string) => {
     <view class="meta">
       <view class="price">
         <text class="symbol">¥</text>
-        <text class="number">123</text>
+        <text class="number">{{ goods?.price }}</text>
       </view>
-      <view class="name ellipsis">名字</view>
-      <view class="desc">简介</view>
+      <view class="name ellipsis">{{ goods?.name }}</view>
+      <view class="desc">{{ goods?.desc }}</view>
     </view>
     <!-- 操作面板 -->
     <view class="action">
-      <view class="item">
+      <view class="item" @tap="open('service')">
         <text class="label">选择</text>
         <view class="box">
           <text class="text">请选择商品规格</text>
-          <uni-icons type="right" size="20"></uni-icons>
+          <uni-icons type="right" size="18"></uni-icons>
         </view>
       </view>
-      <view class="item">
+      <view class="item" @tap="open('address')">
         <text class="label">送至</text>
         <view class="box">
           <text class="text">请选择收获地址</text>
-          <uni-icons type="right" size="20"></uni-icons>
+          <uni-icons type="right" size="18"></uni-icons>
         </view>
       </view>
       <view class="item">
@@ -93,13 +108,18 @@ const onTapImage = (item: string) => {
         <text class="text">详情</text>
       </view>
       <view class="content">
-        <view class="item">
-          <text class="label">属性</text>
-          <text class="value">介绍1231231231231231</text>
+        <view class="item" v-for="item in goods?.details.properties" :key="item.name">
+          <text class="label">{{ item.name }}</text>
+          <text class="value">{{ item.value }}</text>
         </view>
       </view>
       <!-- 图片详情 -->
-      <image></image>
+      <image
+        v-for="item in goods?.details.pictures"
+        :key="item"
+        :src="item"
+        mode="widthFix"
+      ></image>
     </view>
     <!-- 同类推荐 -->
     <view class="similar">
@@ -108,16 +128,17 @@ const onTapImage = (item: string) => {
       </view>
     </view>
     <view class="content">
-      <navigator class="goods" v-for="item in 8" :key="item">
-        <image class="image" mode="aspectFill"></image>
-        <view class="name ellipsis">介绍</view>
+      <navigator class="goods" v-for="item in goods?.similarProducts" :key="item.id">
+        <image class="image" mode="aspectFill" :src="item.picture"></image>
+        <view class="name ellipsis">{{ item.name }}</view>
         <view class="price">
           <text class="symbol">¥</text>
-          <text class="number">5</text>
+          <text class="number">{{ item.price }}</text>
         </view>
       </navigator>
     </view>
   </scroll-view>
+  <!-- 底部 -->
   <view class="footer" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
     <view class="icons">
       <view class="icomItem">
@@ -138,6 +159,11 @@ const onTapImage = (item: string) => {
       <view class="payment">立即购买</view>
     </view>
   </view>
+  <!-- 弹出层 -->
+  <uni-popup ref="popup" type="bottom" background-color="#fff">
+    <ServicePanel v-if="popupKey === 'service'" @close="popup?.close()"></ServicePanel>
+    <AddressPanel v-if="popupKey === 'address'" @close="popup?.close()"></AddressPanel>
+  </uni-popup>
 </template>
 
 <style lang="scss">
