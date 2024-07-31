@@ -1,28 +1,65 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { delMemberAddressIdAPI, getMemberAddressAPI } from '@/services/address'
+import type { AddressItem } from '@/types/address'
+import { onShow } from '@dcloudio/uni-app'
+import { ref } from 'vue'
+
+// 获取收货地址
+const addressList = ref<AddressItem[]>([])
+const getMemberAddressData = async () => {
+  const res = await getMemberAddressAPI()
+  addressList.value = res.result
+}
+// 删除收货地址
+const delMemberAddressIdData = (id: string) => {
+  // 模态弹窗
+  uni.showModal({
+    content: '确定要删除吗？',
+    success: async ({ confirm, cancel }) => {
+      if (confirm) {
+        // 根据id删除地址
+        await delMemberAddressIdAPI(id)
+        // 重新渲染
+        getMemberAddressData()
+      }
+    },
+  })
+}
+// 初始化调用
+onShow(() => {
+  getMemberAddressData()
+})
+</script>
 <template>
   <view class="viewport">
     <scroll-view scroll-y class="scroll-view">
       <!-- 有地址 -->
-      <view class="address" v-if="false">
+      <view class="address" v-if="addressList?.length">
         <uni-swipe-action class="address-list">
-          <uni-swipe-action-item class="item">
+          <uni-swipe-action-item class="item" v-for="item in addressList" :key="item.id">
             <view class="item-content">
               <view class="user">
-                黑马王子
-                <text class="contact">13111111111</text>
-                <text v-if="true" class="badge">默认</text>
+                {{ item.receiver }}
+                <text class="contact">{{ item.contact }}</text>
+                <text v-if="item.isDefault" class="badge">默认</text>
               </view>
-              <view class="locate">北京市 北京市 顺义区 黑马程序员</view>
+              <view class="locate">{{ item.fullLocation }}{{ item.address }}</view>
+              <navigator
+                class="edit"
+                hover-class="none"
+                :url="`/pagesMember/address-form/address-form?id=${item.id}`"
+              >
+                修改
+              </navigator>
             </view>
             <template v-slot:right>
-              <button class="del-btn">删除</button>
+              <button @tap="delMemberAddressIdData(item.id)" class="del-btn">删除</button>
             </template>
           </uni-swipe-action-item>
         </uni-swipe-action>
       </view>
-      <view class="address" v-else> </view>
       <!-- 无地址 -->
-      <view class="blank"> 暂无收货地址 </view>
+      <view class="blank" v-else> 暂无收货地址 </view>
     </scroll-view>
     <view class="addAddress">
       <navigator hover-class="none" url="/pagesMember/address-form/address-form">
@@ -86,6 +123,16 @@ page {
           line-height: 1.6;
           font-size: 26rpx;
           color: #333;
+        }
+        .edit {
+          position: absolute;
+          top: 36rpx;
+          right: 30rpx;
+          padding: 2rpx 0 2rpx 20rpx;
+          border-left: 1rpx solid #666;
+          font-size: 26rpx;
+          color: #666;
+          line-height: 1;
         }
       }
     }
