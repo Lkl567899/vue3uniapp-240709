@@ -6,9 +6,11 @@ import { computed, ref } from 'vue'
 import AddressPanel from './components/AddressPanel.vue'
 import ServicePanel from './components/ServicePanel.vue'
 import type {
+  SkuPopupEvent,
   SkuPopupInstance,
   SkuPopupLocaldata,
 } from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
+import { PostMemberCartAPI } from '@/services/cart'
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 指示点准备
@@ -70,6 +72,13 @@ const popup = ref<{
   open: (type?: UniHelper.UniPopupType) => void
   close: () => void
 }>()
+// 地址id
+const addressId = ref()
+const setClose = (id?: string) => {
+  console.log(id)
+  addressId.value = id
+  popup.value?.close()
+}
 // suk组件实例
 const skuPopupRef = ref<SkuPopupInstance>()
 // 是否显示SKU组件
@@ -93,6 +102,18 @@ const openPopup = (val: Mode) => {
 const selectArrText = computed(() => {
   return skuPopupRef.value?.selectArr?.join(' ').trim() || '请选择商品规格'
 })
+// 加入购物车
+const onAddCart = async (ev: SkuPopupEvent) => {
+  await PostMemberCartAPI({ skuId: ev._id, count: ev.buy_num })
+  uni.showToast({ title: '添加成功' })
+  isShowSku.value = false
+}
+// 立即购买
+const onBuyNow = (ev: SkuPopupEvent) => {
+  uni.navigateTo({
+    url: `/pagesOrder/create/create?skuId=${ev._id}&count=${ev.buy_num}&addressId=${addressId.value}`,
+  })
+}
 </script>
 
 <template>
@@ -104,6 +125,8 @@ const selectArrText = computed(() => {
     ref="skuPopupRef"
     add-cart-background-color="#FFA868"
     buy-now-background-color="#27BA9B"
+    @add-cart="onAddCart"
+    @buy-now="onBuyNow"
   />
   <scroll-view scroll-y class="viewport">
     <!-- 商品信息 -->
@@ -202,10 +225,10 @@ const selectArrText = computed(() => {
         <uni-icons type="chatbubble" size="20"></uni-icons>
         <view>客服</view>
       </view>
-      <view class="icomItem">
+      <navigator class="icomItem" url="/pages/cart/cart2">
         <uni-icons type="cart" size="20"></uni-icons>
         <view>购物车</view>
-      </view>
+      </navigator>
     </view>
     <view class="buttons">
       <view class="addcart" @tap="openPopup(Mode.Cart)">加入购物车</view>
@@ -215,7 +238,7 @@ const selectArrText = computed(() => {
   <!-- 弹出层 -->
   <uni-popup ref="popup" type="bottom" background-color="#fff">
     <ServicePanel v-if="popupKey === 'service'" @close="popup?.close()"></ServicePanel>
-    <AddressPanel v-if="popupKey === 'address'" @close="popup?.close()"></AddressPanel>
+    <AddressPanel v-if="popupKey === 'address'" @close="setClose"></AddressPanel>
   </uni-popup>
 </template>
 
