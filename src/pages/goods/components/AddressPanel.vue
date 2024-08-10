@@ -13,8 +13,11 @@ onMounted(() => {
 })
 // 子传父
 const emit = defineEmits<{
-  (event: 'close', id?: string): void
+  (event: 'close', item?: AddressItem): void
 }>()
+// 高亮下标
+const activeIndex = ref(0)
+console.log(activeIndex.value)
 </script>
 
 <template>
@@ -25,10 +28,17 @@ const emit = defineEmits<{
     <view class="title">配送至</view>
     <!-- 内容 -->
     <view class="content">
-      <view class="item" v-for="item in AddressList" :key="item.id" @tap="emit('close', item.id)">
-        <view class="user">{{ item.receiver }} {{ item.contact }}</view>
-        <view class="address">{{ item.fullLocation }}{{ item.address }}</view>
-        <!-- <text class="icon icon-checked"></text> -->
+      <view
+        class="item"
+        v-for="(item, index) in AddressList"
+        :key="item.id"
+        @tap=";(activeIndex = index), emit('close', item)"
+      >
+        <view class="userItem">
+          <view class="user">{{ item.receiver }} {{ item.contact }}</view>
+          <view class="address">{{ item.fullLocation }}{{ item.address }}</view>
+        </view>
+        <text class="icon" :class="{ checked: index === activeIndex }"></text>
       </view>
     </view>
     <view class="footer">
@@ -74,14 +84,20 @@ const emit = defineEmits<{
     background-position: 0 center;
     background-image: url(https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/locate.png);
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
-  .icon {
+  .icon::before {
+    content: '\e6cd';
+    font-family: 'erabbit' !important;
+    font-size: 38rpx;
     color: #999;
-    font-size: 40rpx;
-    transform: translateY(-50%);
-    position: absolute;
-    top: 50%;
-    right: 0;
+  }
+  .icon.checked::before {
+    content: '\e6cc';
+    font-size: 38rpx;
+    color: #27ba9b;
   }
   .icon-checked {
     color: #27ba9b;

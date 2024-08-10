@@ -11,6 +11,7 @@ import type {
   SkuPopupLocaldata,
 } from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
 import { PostMemberCartAPI } from '@/services/cart'
+import type { AddressItem } from '@/types/address'
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 // 指示点准备
@@ -73,10 +74,15 @@ const popup = ref<{
   close: () => void
 }>()
 // 地址id
-const addressId = ref()
-const setClose = (id?: string) => {
-  console.log(id)
-  addressId.value = id
+const addressId = ref('')
+// 地址项
+const addressItem = ref()
+const setClose = (item?: AddressItem) => {
+  console.log(item)
+  // 拿到地址用于显示
+  addressItem.value = item!.receiver + item!.contact
+  //把地址id传给后端
+  addressId.value = item!.id
   popup.value?.close()
 }
 // suk组件实例
@@ -166,7 +172,7 @@ const onBuyNow = (ev: SkuPopupEvent) => {
       <view class="item" @tap="open('address')">
         <text class="label">送至</text>
         <view class="box">
-          <text class="text">请选择收获地址</text>
+          <text class="text">{{ addressItem ? addressItem : '请选择地址' }}</text>
           <uni-icons type="right" size="18"></uni-icons>
         </view>
       </view>

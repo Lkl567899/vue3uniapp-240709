@@ -75,12 +75,19 @@
     <view class="total-pay symbol">
       <text class="number">{{ orderPre?.summary.totalPayPrice.toFixed(2) }}</text>
     </view>
-    <view class="button" :class="{ disabled: true }"> 提交订单 </view>
+    <view class="button" :class="{ disabled: !addressItem?.id }" @tap="onOrderSubmit">
+      提交订单
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { getMemberOrderPreAPI, getMemberOrderPreNowAPI } from '@/services/order'
+import {
+  getMemberOrderPreAPI,
+  getMemberOrderPreNowAPI,
+  getMemberOrderRepurchaseByIdAPI,
+  postMemberOrderAPI,
+} from '@/services/order'
 import { useAddressStore } from '@/stores/modules/address'
 import type { OrderPreResult } from '@/types/order'
 import { onLoad } from '@dcloudio/uni-app'
@@ -109,11 +116,13 @@ const query = defineProps<{
   skuId?: string
   count?: number
   addressId?: string
+  orderId?: string
 }>()
 // 获取预付订单数据
 const orderPre = ref<OrderPreResult>()
 const getMemberOrderPreData = async () => {
   if (query.count && query.skuId) {
+    // 立即购买
     const res = await getMemberOrderPreNowAPI({
       count: query.count,
       skuId: query.skuId,
@@ -122,6 +131,10 @@ const getMemberOrderPreData = async () => {
     orderPre.value = res.result
     console.log(res.result, '立即购买')
     return
+  } else if (query.orderId) {
+    const res = await getMemberOrderRepurchaseByIdAPI(query.orderId)
+    orderPre.value = res.result
+    console.log(res.result, '再次购买')
   } else {
     const res = await getMemberOrderPreAPI()
     orderPre.value = res.result
@@ -131,6 +144,7 @@ const getMemberOrderPreData = async () => {
 onLoad(() => {
   getMemberOrderPreData()
 })
+
 // 获取默认地址
 const addressStore = useAddressStore()
 const addressItem = computed(() => {
@@ -140,6 +154,24 @@ const addressItem = computed(() => {
     orderPre.value?.userAddresses[0]
   )
 })
+// 订单提交
+const onOrderSubmit = async () => {
+  console.log(addressItem.value?.id)
+  if (!addressItem.value?.id) {
+    return uni.showToast({ title: '请选择收货地址', icon: 'none' })
+  }
+  const res = await postMemberOrderAPI({
+    addressId: addressItem.value?.id,
+    buyerMessage: buyerMessage.value,
+    deliveryTimeType: deliveryTime.value.type,
+    goods: orderPre.value!.goods.map((v) => ({ count: v.count, skuId: v.skuId })),
+    payChannel: 2,
+    payType: 1,
+  })
+  console.log(res.result)
+  // 关闭当前页面 跳转到订单详情
+  uni.redirectTo({ url: `/pagesOrder/detail/detail?id=${res.result.id}` })
+}
 </script>
 
 <style lang="scss">
