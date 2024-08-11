@@ -10,7 +10,7 @@ const httpInterceptor = {
       options.url = baseUrl + options.url
     }
     //设置超时时间
-    options.timeout = 10000
+    options.timeout = 50000
     //设置请求头
     options.header = {
       ...options.header,

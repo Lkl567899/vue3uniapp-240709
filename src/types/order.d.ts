@@ -136,3 +136,30 @@ export type LogisticItem = {
   /** 时间 */
   time: string
 }
+/** 订单列表请求参数 */
+export type orderType = {
+  /** 页码 */
+  page?: number
+  /** 页容量 */
+  pageSize?: number
+  /**  */
+  orderState?: number
+}
+/** 订单列表 */
+export type OrderListResult = {
+  /** 总记录数 */
+  counts: number
+  /** 数据集合    [ 订单信息 ] */
+  items: OrderItem[]
+  /** 当前页码 */
+  page: number
+  /** 总页数 */
+  pages: number
+  /** 页尺寸 */
+  pageSize: number
+}
+/** 订单列表项 */
+export type OrderItem = OrderResult & {
+  /** 总件数 */
+  totalNum: number
+}
